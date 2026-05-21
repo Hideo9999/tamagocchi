@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="たまごっち">
+<title>たまごっち</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%;
+    background: #1a0a2e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .device {
+    width: min(340px, 90vw);
+    background: #F4C2D8;
+    border-radius: 50% 50% 44% 44% / 40% 40% 60% 60%;
+    padding: 18px 24px 40px;
+    position: relative;
+    border: 4px solid #C97AAF;
+    box-shadow: inset 0 4px 0 #F9E0ED, inset 0 -4px 0 #B06899, 0 8px 32px rgba(0,0,0,0.5);
+  }
+  .device::before {
+    content: '';
+    position: absolute;
+    top: -16px; left: 50%;
+    transform: translateX(-50%);
+    width: 48px; height: 20px;
+    background: #C97AAF;
+    border-radius: 12px 12px 0 0;
+  }
+  .device::after {
+    content: '';
+    position: absolute;
+    top: -8px; left: 50%;
+    transform: translateX(-50%);
+    width: 10px; height: 14px;
+    background: #888;
+    border-radius: 4px;
+    box-shadow: 0 0 0 2px #555;
+  }
+  .screen-wrap {
+    background: #2A1F3D;
+    border-radius: 16px;
+    padding: 4px;
+    border: 3px solid #4A3860;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+  }
+  .screen {
+    background: #9DC24D;
+    border-radius: 12px;
+    height: 180px;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Press Start 2P', monospace;
+  }
+  .sky {
+    position: absolute; top: 0; left: 0; right: 0; height: 70%;
+    background: linear-gradient(#6EC6E8, #B8E0F5);
+    transition: background 1s;
+  }
+  .sky.night { background: linear-gradient(#0A0A2E, #1A1A4E); }
+  .ground {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 38%;
+    background: #7AC94A;
+    border-top: 3px solid #5AA832;
+    transition: background 1s;
+  }
+  .ground.night { background: #2A5A1A; border-top-color: #1A4A0A; }
+  .sun {
+    position: absolute; top: 10px; right: 14px;
+    width: 24px; height: 24px;
+    background: #FFE033;
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px #FFB700;
+    transition: opacity 0.5s;
+  }
+  .cloud {
+    position: absolute; top: 16px; left: 18px;
+    width: 48px; height: 16px;
+    background: white; border-radius: 8px; opacity: 0.85;
+  }
+  .cloud::before {
+    content: ''; position: absolute;
+    top: -8px; left: 8px;
+    width: 20px; height: 20px;
+    background: white; border-radius: 50%;
+  }
+  .cloud::after {
+    content: ''; position: absolute;
+    top: -5px; left: 22px;
+    width: 14px; height: 14px;
+    background: white; border-radius: 50%;
+  }
+  .pet-container {
+    position: absolute;
+    bottom: 36%; left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+  }
+  .pet {
+    font-size: 36px; display: block;
+    animation: petbounce 1s ease-in-out infinite;
+    filter: drop-shadow(2px 3px 0px rgba(0,0,0,0.2));
+    cursor: pointer;
+  }
+  @keyframes petbounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+  .pet.eating { animation: eating 0.3s steps(2) infinite; }
+  @keyframes eating { 0% { transform: scale(1); } 50% { transform: scale(1.15); } }
+  .pet.sleeping { animation: none; opacity: 0.7; }
+  .pet.sick { animation: sick 0.5s ease-in-out infinite; filter: drop-shadow(0 0 4px #90EE90); }
+  @keyframes sick { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-3px)} 75%{transform:translateX(3px)} }
+  .pet.dead { animation: none; opacity: 0.5; filter: grayscale(1); }
+  .pet.happy { animation: happy 0.5s steps(2) 3; }
+  @keyframes happy { 0%,100%{transform:scale(1) rotate(0)} 50%{transform:scale(1.2) rotate(-10deg)} }
+  .status-bar {
+    position: absolute; top: 6px; left: 6px; right: 6px;
+    display: flex; gap: 4px;
+    font-family: 'Press Start 2P', monospace;
+    color: #1A3A1A;
+  }
+  .stat { display: flex; align-items: center; gap: 2px; }
+  .stat-label { font-size: 4px; color: #2A5A2A; }
+  .hearts { display: flex; gap: 1px; }
+  .heart { font-size: 7px; }
+  .heart.filled { color: #E0445E; }
+  .heart.empty { color: #999; }
+  .message {
+    position: absolute; bottom: 2px; left: 0; right: 0;
+    text-align: center; font-size: 5px;
+    color: #1A3A1A;
+    font-family: 'Press Start 2P', monospace;
+    padding: 2px;
+  }
+  .age-display {
+    position: absolute; top: 6px; right: 8px;
+    font-size: 5px; color: #1A3A1A;
+    font-family: 'Press Start 2P', monospace;
+  }
+  .zz {
+    position: absolute; bottom: 50%; left: 55%;
+    font-size: 14px; color: #6699CC;
+    font-family: 'Press Start 2P', monospace;
+    animation: floatz 1.5s ease-in infinite;
+    display: none;
+  }
+  @keyframes floatz {
+    0% { opacity: 0; transform: translateY(0) scale(0.8); }
+    50% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-20px) scale(1.2); }
+  }
+  .poop { position: absolute; font-size: 12px; }
+  .menu-screen {
+    display: none; flex-direction: column; gap: 4px;
+    padding: 8px; height: 180px;
+    background: #9DC24D; border-radius: 12px;
+  }
+  .menu-screen.active { display: flex; }
+  .menu-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px; color: #1A3A1A;
+    text-align: center; margin-bottom: 4px;
+    border-bottom: 2px solid #5AA832; padding-bottom: 4px;
+  }
+  .menu-item {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px; color: #1A3A1A;
+    padding: 5px 8px; border-radius: 4px;
+    cursor: pointer; display: flex; gap: 8px; align-items: center;
+  }
+  .menu-item.selected { background: rgba(0,0,0,0.15); }
+  .overlay-msg {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.75); color: #FFE033;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px; padding: 8px 12px;
+    border-radius: 6px; text-align: center;
+    z-index: 10; pointer-events: none;
+    opacity: 0; transition: opacity 0.3s;
+    white-space: nowrap;
+  }
+  .overlay-msg.show { opacity: 1; }
+  .buttons-row {
+    display: flex; justify-content: center;
+    gap: 18px; margin-top: 18px;
+  }
+  .btn-group {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 4px;
+  }
+  .btn-label {
+    font-size: 9px;
+    font-family: 'DotGothic16', monospace;
+    color: #6A3060; letter-spacing: 0.5px;
+  }
+  .btn {
+    width: 52px; height: 52px;
+    border-radius: 50%; border: 3px solid;
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    outline: none; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active { transform: translateY(2px); }
+  .btn-a { background: #FF8FAB; border-color: #C06080; color: white; box-shadow: 0 4px 0 #C06080; }
+  .btn-a:active { box-shadow: 0 2px 0 #C06080; }
+  .btn-b { background: #A0D4FF; border-color: #6090C0; color: white; box-shadow: 0 4px 0 #6090C0; }
+  .btn-b:active { box-shadow: 0 2px 0 #6090C0; }
+  .btn-c { background: #B8E87A; border-color: #78A840; color: white; box-shadow: 0 4px 0 #78A840; }
+  .btn-c:active { box-shadow: 0 2px 0 #78A840; }
+</style>
+</head>
+<body>
+<div class="device">
+  <div class="screen-wrap">
+    <div class="screen" id="mainScreen">
+      <div class="sky" id="sky"></div>
+      <div class="ground" id="ground"></div>
+      <div class="sun" id="sun"></div>
+      <div class="cloud"></div>
+      <div class="pet-container">
+        <span class="pet" id="pet">🐣</span>
+      </div>
+      <div class="zz" id="zz">Zzz</div>
+      <div id="poops"></div>
+      <div class="status-bar">
+        <div class="stat"><span class="stat-label">HP</span><div class="hearts" id="hpHearts"></div></div>
+        <div class="stat"><span class="stat-label">FD</span><div class="hearts" id="fdHearts"></div></div>
+        <div class="stat"><span class="stat-label">HH</span><div class="hearts" id="hhHearts"></div></div>
+      </div>
+      <div class="age-display" id="ageDisplay">AGE:0</div>
+      <div class="message" id="msg"></div>
+      <div class="overlay-msg" id="overlayMsg"></div>
+    </div>
+    <div class="menu-screen" id="menuScreen">
+      <div class="menu-title">MENU</div>
+      <div id="menuItems"></div>
+    </div>
+  </div>
+  <div class="buttons-row">
+    <div class="btn-group">
+      <button class="btn btn-a" id="btnA">🍙</button>
+      <span class="btn-label">食べる</span>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-b" id="btnB">🎮</button>
+      <span class="btn-label">遊ぶ</span>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-c" id="btnC">📋</button>
+      <span class="btn-label">メニュー</span>
+    </div>
+  </div>
+</div>
+<script>
+const STAGES=[
+  {min:0,max:2,emoji:'🐣',name:'たまご'},
+  {min:2,max:5,emoji:'🐥',name:'ひよっこ'},
+  {min:5,max:10,emoji:'🐤',name:'こども'},
+  {min:10,max:20,emoji:'🐓',name:'おとな'},
+  {min:20,max:999,emoji:'🦚',name:'おとしより'}
+];
+let state={age:0,hp:5,food:5,happy:5,sick:false,sleeping:false,dead:false,poops:0,stage:0,menuOpen:false,menuIdx:0,ticks:0};
+const pet=document.getElementById('pet');
+const msg=document.getElementById('msg');
+const zz=document.getElementById('zz');
+const overlayMsg=document.getElementById('overlayMsg');
+const mainScreen=document.getElementById('mainScreen');
+const menuScreen=document.getElementById('menuScreen');
+const sky=document.getElementById('sky');
+const ground=document.getElementById('ground');
+const sun=document.getElementById('sun');
+const ageDisplay=document.getElementById('ageDisplay');
+const poopsEl=document.getElementById('poops');
+
+function getStage(){for(let s of STAGES)if(state.age>=s.min&&state.age<s.max)return s;return STAGES[STAGES.length-1];}
+function clamp(v,min=0,max=5){return Math.max(min,Math.min(max,v));}
+
+function updateHearts(id,val,max=5){
+  const el=document.getElementById(id);el.innerHTML='';
+  for(let i=0;i<max;i++){const h=document.createElement('span');h.className='heart '+(i<val?'filled':'empty');h.textContent=i<val?'♥':'♡';el.appendChild(h);}
+}
+
+let overlayTimer=null;
+function showOverlay(text,duration=1500){
+  overlayMsg.textContent=text;overlayMsg.classList.add('show');
+  if(overlayTimer)clearTimeout(overlayTimer);
+  overlayTimer=setTimeout(()=>overlayMsg.classList.remove('show'),duration);
+}
+
+function petHappy(){
+  const cls=pet.className;pet.className='pet happy';
+  setTimeout(()=>{pet.className=cls;},600);
+}
+
+function updateDisplay(){
+  const stage=getStage();
+  if(!state.dead){
+    pet.textContent=stage.emoji;pet.className='pet';
+    if(state.sleeping){pet.className='pet sleeping';zz.style.display='block';}
+    else if(state.sick){pet.className='pet sick';zz.style.display='none';}
+    else{zz.style.display='none';}
+  } else {pet.textContent='💀';pet.className='pet dead';zz.style.display='none';}
+
+  const isNight=state.sleeping||(state.age>0&&(state.ticks%120>80));
+  sky.className='sky'+(isNight?' night':'');
+  ground.className='ground'+(isNight?' night':'');
+  sun.style.opacity=isNight?'0':'1';
+
+  updateHearts('hpHearts',state.hp);
+  updateHearts('fdHearts',state.food);
+  updateHearts('hhHearts',state.happy);
+  ageDisplay.textContent='AGE:'+state.age;
+
+  let m='';
+  if(state.dead)m='さようなら...';
+  else if(state.sleeping)m='💤おやすみ💤';
+  else if(state.sick)m='🤒びょうき！';
+  else if(state.food<=1)m='おなかすいた！';
+  else if(state.happy<=1)m='あそんで！';
+  else if(state.hp<=1)m='げんきがない...';
+  else if(state.poops>=2)m='うんちがある！';
+  else if(state.food>=4&&state.happy>=4)m=state.age<2?'うまれるよ♪':stage.name+'だよ♪';
+  msg.textContent=m;
+
+  poopsEl.innerHTML='';
+  for(let i=0;i<Math.min(state.poops,4);i++){
+    const p=document.createElement('span');p.className='poop';p.textContent='💩';
+    p.style.bottom=(32+Math.random()*8)+'%';p.style.left=(15+i*18)+'%';
+    poopsEl.appendChild(p);
+  }
+}
+
+const MENUS=[
+  {label:'💊 くすり',action:()=>{
+    if(!state.sick){showOverlay('びょうきじゃないよ');return;}
+    state.sick=false;state.hp=clamp(state.hp+2);showOverlay('なおったよ！🌟');petHappy();
+  }},
+  {label:'🚿 そうじ',action:()=>{
+    if(state.poops===0){showOverlay('きれいだよ！');return;}
+    state.poops=0;state.happy=clamp(state.happy+1);showOverlay('きれいになった✨');petHappy();
+  }},
+  {label:'💡 でんき',action:()=>{
+    if(state.sleeping){state.sleeping=false;showOverlay('おきたよ！');}
+    else{state.sleeping=true;showOverlay('おやすみ💤');}
+  }},
+  {label:'💔 リセット',action:()=>{
+    if(!state.dead){showOverlay('しんでないよ');return;}
+    state={age:0,hp:5,food:5,happy:5,sick:false,sleeping:false,dead:false,poops:0,stage:0,menuOpen:false,menuIdx:0,ticks:0};
+    showOverlay('あたらしいこが！🥚');
+  }}
+];
+
+function openMenu(){
+  state.menuOpen=true;state.menuIdx=0;
+  mainScreen.style.display='none';menuScreen.classList.add('active');
+  renderMenu();
+}
+function closeMenu(){
+  state.menuOpen=false;
+  mainScreen.style.display='';menuScreen.classList.remove('active');
+}
+function renderMenu(){
+  const el=document.getElementById('menuItems');el.innerHTML='';
+  MENUS.forEach((item,i)=>{
+    const div=document.createElement('div');
+    div.className='menu-item'+(i===state.menuIdx?' selected':'');
+    div.textContent=(i===state.menuIdx?'▶ ':'　')+item.label;
+    div.onclick=()=>{state.menuIdx=i;item.action();closeMenu();updateDisplay();};
+    el.appendChild(div);
+  });
+}
+
+document.getElementById('btnA').onclick=()=>{
+  if(state.menuOpen){state.menuIdx=(state.menuIdx+1)%MENUS.length;renderMenu();return;}
+  if(state.dead||state.sleeping){showOverlay('いまはダメ');return;}
+  if(state.food>=5){showOverlay('おなかいっぱい！');return;}
+  state.food=clamp(state.food+1);
+  pet.className='pet eating';setTimeout(()=>{pet.className='pet';},1000);
+  showOverlay('もぐもぐ🍙');
+  if(state.sick&&Math.random()<0.2){state.sick=false;showOverlay('げんきになった！');}
+};
+document.getElementById('btnB').onclick=()=>{
+  if(state.menuOpen){MENUS[state.menuIdx].action();closeMenu();updateDisplay();return;}
+  if(state.dead||state.sleeping){showOverlay('いまはダメ');return;}
+  if(state.sick){showOverlay('びょうきだよ💊');return;}
+  if(state.happy>=5){showOverlay('もうまんぞく！');return;}
+  state.happy=clamp(state.happy+1);petHappy();showOverlay('たのしい🎮');
+  state.food=clamp(state.food-1);
+};
+document.getElementById('btnC').onclick=()=>{
+  if(state.menuOpen){closeMenu();updateDisplay();return;}
+  openMenu();
+};
+pet.onclick=()=>{
+  if(state.dead||state.sleeping||state.menuOpen)return;
+  petHappy();
+  showOverlay(['なでなで💕','うれしい！','きゃ〜🌸'][Math.floor(Math.random()*3)]);
+};
+
+setInterval(()=>{
+  if(state.dead||state.sleeping){
+    if(!state.dead)state.hp=clamp(state.hp+0.03);
+    state.ticks++;
+    if(state.sleeping&&state.ticks%40===0){const hr=new Date().getHours();if(hr>=7&&hr<20)state.sleeping=false;}
+    updateDisplay();return;
+  }
+  state.ticks++;
+  if(state.ticks%40===0){state.food=clamp(state.food-1);state.happy=clamp(state.happy-1);}
+  if(state.ticks%70===0&&state.food>=3)state.poops++;
+  if(state.poops>=3&&!state.sick&&Math.random()<0.08)state.sick=true;
+  if(state.sick)state.hp=clamp(state.hp-0.05);
+  if(state.food===0)state.hp=clamp(state.hp-0.08);
+  if(state.happy===0)state.hp=clamp(state.hp-0.04);
+  if(state.ticks%60===0){
+    state.age++;
+    const newStage=getStage();
+    if(newStage.emoji!==STAGES[Math.min(state.stage,STAGES.length-1)].emoji){showOverlay('せいちょうした！🌟',2000);state.stage++;}
+  }
+  if(state.hp<=0){state.dead=true;showOverlay('...さようなら',3000);}
+  updateDisplay();
+},500);
+
+updateDisplay();
+</script>
+</body>
+</html>
